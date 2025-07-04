@@ -44,7 +44,6 @@
     "autoprefixer": "10.4.15",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
-    "caniuse-lite": "^1.0.30001726",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
