@@ -118,15 +118,29 @@ export function TestExecutionProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: null });
 
       const params = new URLSearchParams();
+      
       if (filters) {
-        Object.keys(filters).forEach(key => {
-          if (filters[key] && filters[key] !== 'all') {
-            params.append(key, filters[key]);
-          }
-        });
+        // Handle tags filter
+        if (filters.tags && Array.isArray(filters.tags) && filters.tags.length > 0) {
+          params.append('tags', JSON.stringify(filters.tags));
+        }
+        
+        // Handle status filter
+        if (filters.status && filters.status.trim() !== '') {
+          params.append('status', filters.status);
+        }
+        
+        // Handle label filter
+        if (filters.label && filters.label.trim() !== '') {
+          params.append('label', filters.label);
+        }
       }
 
-      const response = await axios.get(`/api/test-executions?${encodeURIComponent(params.toString())}`);
+      const queryString = params.toString();
+      const url = queryString ? `/api/test-executions?${queryString}` : '/api/test-executions';
+      
+      const response = await axios.get(url);
+      
       if (response.data.success) { 
         dispatch({ type: 'SET_TEST_EXECUTIONS', payload: response.data.data });
       } else {

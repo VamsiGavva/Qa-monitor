@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { TestExecution } from '@/types/testExecution';
 import { Task } from '@/types/task';
 import ImageUpload from './ImageUpload';
-import MultiSelectTags from './MultiSelectTags';
 import { Clock, CheckCircle, XCircle, AlertCircle, Hash, User, FileText } from 'lucide-react';
 
 interface TestExecutionFormProps {
@@ -120,15 +119,6 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     }));
   };
 
-  const handleTagsChange = (tags: string[]) => {
-    if (selectedTask) {
-      setSelectedTask({
-        ...selectedTask,
-        tags,
-      });
-    }
-  };
-
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -178,6 +168,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
           status: formData.status === 'pass' ? 'completed' : 'failed',
         });
       } else {
+        // Always create new test execution (no duplicate checking)
         await createTestExecution({
           ...testExecutionData,
           status: formData.status === 'pass' ? 'completed' : 'failed',
@@ -284,7 +275,6 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
                 onChange={handleInputChange}
                 placeholder="Auto-generated test ID"
                 className={`h-12 font-mono ${errors.testId ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-blue-500`}
-                readOnly
               />
               {errors.testId && (
                 <p className="text-sm text-red-500 flex items-center space-x-1">
@@ -298,12 +288,20 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
           {selectedTask && (
             <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-gray-700">Update Tags (Optional)</Label>
-                <MultiSelectTags
-                  selectedTags={selectedTask.tags}
-                  onTagsChange={handleTagsChange}
-                  placeholder="Update tags for this task..."
-                />
+                <Label className="text-sm font-semibold text-gray-700">Selected Task Details</Label>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Description:</span> {selectedTask.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-sm font-medium text-gray-600 mr-2">Tags:</span>
+                    {selectedTask.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

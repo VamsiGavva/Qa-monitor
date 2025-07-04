@@ -3,49 +3,73 @@ import connectToDatabase from '@/lib/mongodb';
 import TestExecution from '@/models/TestExecution';
 import Task from '@/models/Task';
 
-// GET - Fetch all test executions with optional filters
+// GET - Fetch all test executions with filters
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
     
     const { searchParams } = new URL(request.url);
+    const tags = searchParams.get('tags');
     const status = searchParams.get('status');
-    const taskId = searchParams.get('taskId');
-    const testId = searchParams.get('testId');
-    const search = searchParams.get('search');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const label = searchParams.get('label');
 
-    // Build filter object
-    const filter: any = {};
-    
-    if (status && status !== 'all') {
-      filter.status = status;
-    }
-    
-    if (taskId) {
-      filter.taskId = taskId;
-    }
-    
-    if (testId) {
-      filter.testId = { $regex: testId, $options: 'i' };
-    }
-    
-    if (search) {
-      filter.$or = [
-        { testId: { $regex: search, $options: 'i' } },
-        { testerName: { $regex: search, $options: 'i' } },
-        { feedback: { $regex: search, $options: 'i' } },
-      ];
+    // Build aggregation pipeline
+    const pipeline: any[] = [
+      // Populate task information
+      {
+        $lookup: {
+          from: 'tasks',
+          localField: 'taskId',
+          foreignField: '_id',
+          as: 'taskId'
+        }
+      },
+      {
+        $unwind: '$taskId'
+      }
+    ];
+
+    // Build match conditions
+    const matchConditions: any = {};
+
+    // Filter by status
+    if (status && status.trim() !== '') {
+      matchConditions.status = status.toLowerCase();
     }
 
-    // Build sort object
-    const sort: any = {};
-    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    // Filter by unit test label
+    if (label && label.trim() !== '') {
+      matchConditions['taskId.unitTestLabel'] = { 
+        $regex: new RegExp(label, 'i') 
+      };
+    }
 
-    const testExecutions = await TestExecution.find(filter)
-      .populate('taskId', 'unitTestLabel description tags')
-      .sort(sort);
+    // Filter by tags
+    if (tags && tags.trim() !== '') {
+      try {
+        const tagsArray = JSON.parse(tags);
+        if (Array.isArray(tagsArray) && tagsArray.length > 0) {
+          matchConditions['taskId.tags'] = { 
+            $in: tagsArray.map(tag => new RegExp(tag, 'i'))
+          };
+        }
+      } catch (error) {
+        // If tags is not a valid JSON array, treat it as a single tag
+        matchConditions['taskId.tags'] = { 
+          $in: [new RegExp(tags, 'i')]
+        };
+      }
+    }
+
+    // Add match stage if there are conditions
+    if (Object.keys(matchConditions).length > 0) {
+      pipeline.push({ $match: matchConditions });
+    }
+
+    // Sort by creation date (newest first)
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    const testExecutions = await TestExecution.aggregate(pipeline);
     
     return NextResponse.json({
       success: true,
@@ -96,36 +120,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-   
-
-
-
-    // Check if test execution with same testId already exists
-    const existingExecution = await TestExecution.findOne({ testId: testId.trim() });
-    
-    if (existingExecution) {
-      // Update existing execution instead of creating new one
-      const updatedExecution = await TestExecution.findByIdAndUpdate(
-        existingExecution._id,
-        {
-          taskId,
-          status: status || 'fail',
-          feedback: feedback.trim(),
-          attachedImages: attachedImages || [],
-          testerName: testerName.trim(),
-         
-        },
-        { new: true, runValidators: true }
-      ).populate('taskId', 'unitTestLabel description tags');
-
-      return NextResponse.json({
-        success: true,
-        data: updatedExecution,
-        message: 'Test execution updated successfully',
-      });
-    }
-
-    // Create new test execution
+    // Create new test execution (always create new, don't update existing)
     const testExecution = new TestExecution({
       taskId,
       testId: testId.trim(),
@@ -133,7 +128,6 @@ export async function POST(request: NextRequest) {
       feedback: feedback.trim(),
       attachedImages: attachedImages || [],
       testerName: testerName.trim(),
-  
     });
 
     const savedTestExecution = await testExecution.save();
