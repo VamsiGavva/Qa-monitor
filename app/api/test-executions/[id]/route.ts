@@ -74,26 +74,31 @@ export async function PUT(
     }
 
     // Validation
-    if (!taskId || !testId || !testCases || !feedback || !testerName) {
+    if (!taskId || !testId || !feedback || !testerName) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Task ID, Test ID, test cases, feedback, and tester name are required',
+          error: 'Task ID, Test ID, feedback, and tester name are required',
         },
         { status: 400 }
       );
     }
 
-    // Calculate passed test cases
-    const passedTestCases = testCases.filter((tc: any) => tc.passed).length;
-    const totalTestCases = testCases.length;
+    // Calculate passed test cases if testCases are provided
+    let passedTestCases = 0;
+    let totalTestCases = 0;
+    
+    if (testCases && Array.isArray(testCases)) {
+      passedTestCases = testCases.filter((tc: any) => tc.passed).length;
+      totalTestCases = testCases.length;
+    }
 
     const updatedTestExecution = await TestExecution.findByIdAndUpdate(
       id,
       {
         taskId,
         testId: testId.trim(),
-        testCases,
+        testCases: testCases || [],
         status,
         feedback: feedback.trim(),
         attachedImages: attachedImages || [],
@@ -102,7 +107,7 @@ export async function PUT(
         totalTestCases,
       },
       { new: true, runValidators: true }
-    ).populate('taskId', 'description tags');
+    ).populate('taskId', 'unitTestLabel description tags');
 
     if (!updatedTestExecution) {
       return NextResponse.json(

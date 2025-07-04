@@ -53,9 +53,9 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
   const [availableLabels, setAvailableLabels] = useState<string[]>([]);
 
   useEffect(() => {
-    // Load initial data
+    // Load initial data - get only latest executions by default
     getTasks();
-    getTestExecutions();
+    getTestExecutions({ latest: true });
   }, []);
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
   };
 
   const handleSearch = () => {
-    // Apply filters to get filtered test executions
-    getTestExecutions(filters);
+    // Apply filters to get ALL filtered test executions (not just latest)
+    getTestExecutions({ ...filters, latest: false });
   };
 
   const handleClearFilters = () => {
@@ -101,12 +101,14 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
       status: '',
       label: '',
     });
-    // Reload all data
-    getTestExecutions();
+    // Reload latest data only
+    getTestExecutions({ latest: true });
   };
 
   const handleRefresh = () => {
-    getTestExecutions(filters);
+    // If filters are applied, get all executions, otherwise get latest only
+    const hasFilters = filters.tags.length > 0 || filters.status || filters.label;
+    getTestExecutions({ ...filters, latest: !hasFilters });
   };
 
   const formatDate = (dateString: string) => {
@@ -209,6 +211,9 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
           <div className="flex items-center space-x-2">
             <FileText className="h-6 w-6 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">Test Executions</span>
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              Latest Results
+            </Badge>
           </div>
           <div className="flex items-center space-x-4">
             <Button
@@ -223,7 +228,7 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
             </Button>
             <div className="flex items-center space-x-2 text-sm text-gray-600 bg-white px-3 py-1 rounded-lg border">
               <Filter className="h-4 w-4" />
-              <span>{testExecutions.length} total executions</span>
+              <span>{testExecutions.length} executions</span>
             </div>
           </div>
         </CardTitle>
@@ -316,7 +321,7 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
           {/* Action Buttons */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             <div className="text-sm text-gray-600">
-              Use filters above to narrow down test executions
+              Apply filters to search through all test executions (including history)
             </div>
             <div className="flex space-x-3">
               <Button
@@ -332,7 +337,7 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-6"
               >
                 <Search className="h-4 w-4 mr-2" />
-                Apply Filters
+                Search All History
               </Button>
             </div>
           </div>
@@ -367,12 +372,6 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-gray-50 to-blue-50 border-b-2 border-gray-200">
-                  <TableHead className="font-bold text-gray-800 py-4">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4" />
-                      <span>Test ID</span>
-                    </div>
-                  </TableHead>
                   <TableHead className="font-bold text-gray-800">
                     <div className="flex items-center space-x-2">
                       <Target className="h-4 w-4" />
@@ -405,9 +404,6 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
               <TableBody>
                 {testExecutions.map((execution, index) => (
                   <TableRow key={execution._id} className="hover:bg-blue-50/50 transition-colors border-b border-gray-100">
-                    <TableCell className="font-mono text-sm font-medium text-blue-700 py-4">
-                      {execution.testId}
-                    </TableCell>
                     <TableCell className="font-medium">
                       <div className="font-medium text-blue-700">
                         {(execution as any).taskId?.unitTestLabel || 'N/A'}

@@ -134,10 +134,18 @@ export function TestExecutionProvider({ children }: { children: ReactNode }) {
         if (filters.label && filters.label.trim() !== '') {
           params.append('label', filters.label);
         }
+
+        // Handle latest filter
+        if (filters.latest !== undefined) {
+          params.append('latest', filters.latest.toString());
+        }
+      } else {
+        // Default to latest only
+        params.append('latest', 'true');
       }
 
       const queryString = params.toString();
-      const url = queryString ? `/api/test-executions?${queryString}` : '/api/test-executions';
+      const url = queryString ? `/api/test-executions?${queryString}` : '/api/test-executions?latest=true';
       
       const response = await axios.get(url);
       

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTestExecution } from '@/context/TestExecutionContext';
 import { useTask } from '@/context/TaskContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,14 +24,13 @@ interface TestExecutionFormProps {
 export default function TestExecutionForm({ editTestExecution, onSuccess }: TestExecutionFormProps) {
   const { createTestExecution, updateTestExecution, loading, uploadImages } = useTestExecution();
   const { tasks, getTasks } = useTask();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     taskId: '',
-    testId: '',
     status: 'fail' as 'pass' | 'fail',
     feedback: '',
     attachedImages: [] as string[],
-    testerName: '',
   });
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -53,11 +53,9 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     if (editTestExecution) {
       setFormData({
         taskId: editTestExecution.taskId?._id || '',
-        testId: editTestExecution.testId,
         status: editTestExecution.status === 'completed' ? 'pass' : 'fail',
         feedback: editTestExecution.feedback,
         attachedImages: editTestExecution.attachedImages || [],
-        testerName: editTestExecution.testerName,
       });
       
       // Find and set selected task
@@ -65,12 +63,6 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       if (task) {
         setSelectedTask(task);
       }
-    } else {
-      // Generate new test ID for new executions
-      setFormData(prev => ({
-        ...prev,
-        testId: generateTestId(),
-      }));
     }
   }, [editTestExecution, tasks]);
 
@@ -99,8 +91,6 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       setFormData(prev => ({
         ...prev,
         taskId,
-        // Generate new test ID when task changes (only for new executions)
-        testId: editTestExecution ? prev.testId : generateTestId(),
       }));
     }
   };
@@ -126,16 +116,12 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       newErrors.taskId = 'Task selection is required';
     }
 
-    if (!formData.testId.trim()) {
-      newErrors.testId = 'Test ID is required';
-    }
-
-    if (!formData.testerName.trim()) {
-      newErrors.testerName = 'Tester name is required';
-    }
-
     if (!formData.feedback.trim()) {
       newErrors.feedback = 'Feedback is required';
+    }
+
+    if (!user?.name) {
+      newErrors.user = 'User not authenticated';
     }
 
     setErrors(newErrors);
@@ -152,8 +138,8 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     try {
       const testExecutionData = {
         ...formData,
-        testId: formData.testId.trim(),
-        testerName: formData.testerName.trim(),
+        testId: generateTestId(), // Auto-generate test ID
+        testerName: user?.name || '', // Use logged-in user's name
         feedback: formData.feedback.trim(),
         testCases: [{ // Add default test case structure
           testCase: 'Default test case',
@@ -179,11 +165,9 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       if (!editTestExecution) {
         setFormData({
           taskId: '',
-          testId: generateTestId(),
           status: 'fail',
           feedback: '',
           attachedImages: [],
-          testerName: '',
         });
         setSelectedTask(null);
       }
@@ -264,71 +248,6 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="testId" className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                <Hash className="h-4 w-4" />
-                <span>Test ID</span>
-              </Label>
-              <Input
-                id="testId"
-                name="testId"
-                value={formData.testId}
-                onChange={handleInputChange}
-                placeholder="Auto-generated test ID"
-                className={`h-12 font-mono ${errors.testId ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-blue-500`}
-              />
-              {errors.testId && (
-                <p className="text-sm text-red-500 flex items-center space-x-1">
-                  <XCircle className="h-3 w-3" />
-                  <span>{errors.testId}</span>
-                </p>
-              )}
-            </div>
-          </div>
-
-          {selectedTask && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-gray-700">Selected Task Details</Label>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Description:</span> {selectedTask.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <span className="text-sm font-medium text-gray-600 mr-2">Tags:</span>
-                    {selectedTask.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <Label htmlFor="testerName" className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Tester Name</span>
-              </Label>
-              <Input
-                id="testerName"
-                name="testerName"
-                value={formData.testerName}
-                onChange={handleInputChange}
-                placeholder="Enter tester name"
-                className={`h-12 ${errors.testerName ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-blue-500`}
-              />
-              {errors.testerName && (
-                <p className="text-sm text-red-500 flex items-center space-x-1">
-                  <XCircle className="h-3 w-3" />
-                  <span>{errors.testerName}</span>
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="status" className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
                 {getStatusIcon(formData.status)}
                 <span>Status</span>
@@ -355,6 +274,41 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {selectedTask && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700">Selected Task Details</Label>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Description:</span> {selectedTask.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-sm font-medium text-gray-600 mr-2">Tags:</span>
+                    {selectedTask.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Display current user info */}
+          <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <Label className="text-sm font-semibold text-blue-700 flex items-center space-x-2">
+              <User className="h-4 w-4" />
+              <span>Tester Information</span>
+            </Label>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-blue-800 font-medium">Testing as:</span>
+              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                {user?.name || 'Unknown User'}
+              </Badge>
             </div>
           </div>
 

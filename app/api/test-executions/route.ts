@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.get('tags');
     const status = searchParams.get('status');
     const label = searchParams.get('label');
+    const latest = searchParams.get('latest');
 
     // Build aggregation pipeline
     const pipeline: any[] = [
@@ -68,6 +69,24 @@ export async function GET(request: NextRequest) {
 
     // Sort by creation date (newest first)
     pipeline.push({ $sort: { createdAt: -1 } });
+
+    // If latest is true and no filters are applied, get only the latest execution per task
+    if (latest === 'true' && Object.keys(matchConditions).length === 0) {
+      pipeline.push(
+        {
+          $group: {
+            _id: '$taskId._id',
+            latestExecution: { $first: '$$ROOT' }
+          }
+        },
+        {
+          $replaceRoot: { newRoot: '$latestExecution' }
+        },
+        {
+          $sort: { createdAt: -1 }
+        }
+      );
+    }
 
     const testExecutions = await TestExecution.aggregate(pipeline);
     
