@@ -19,7 +19,7 @@ export interface TestExecution {
     notes: string;
     _id: string;
   }[];
-  status: 'pending' | 'completed' | 'in-progress' | 'failed';
+  status: 'pass' | 'fail';
   feedback: string;
   attachedImages: string[];
   testerName: string;
@@ -30,12 +30,11 @@ export interface TestExecution {
   __v: number;
 }
 
-
 export interface CreateTestExecutionRequest {
   taskId: string;
   testId: string;
   testCases: TestCase[];
-  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  status: 'pass' | 'fail';
   feedback: string;
   attachedImages?: string[];
   testerName: string;

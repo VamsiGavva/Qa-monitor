@@ -5,7 +5,6 @@ import { useTestExecution } from '@/context/TestExecutionContext';
 import { useTask } from '@/context/TaskContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { TestExecution } from '@/types/testExecution';
 import { Task } from '@/types/task';
 import ImageUpload from './ImageUpload';
-import { Clock, CheckCircle, XCircle, AlertCircle, Hash, User, FileText } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Hash, User, FileText } from 'lucide-react';
 
 interface TestExecutionFormProps {
   editTestExecution?: TestExecution | null;
@@ -53,7 +52,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     if (editTestExecution) {
       setFormData({
         taskId: editTestExecution.taskId?._id || '',
-        status: editTestExecution.status === 'completed' ? 'pass' : 'fail',
+        status: editTestExecution.status,
         feedback: editTestExecution.feedback,
         attachedImages: editTestExecution.attachedImages || [],
       });
@@ -138,10 +137,10 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     try {
       const testExecutionData = {
         ...formData,
-        testId: generateTestId(), // Auto-generate test ID
-        testerName: user?.name || '', // Use logged-in user's name
+        testId: generateTestId(),
+        testerName: user?.name || '',
         feedback: formData.feedback.trim(),
-        testCases: [{ // Add default test case structure
+        testCases: [{
           testCase: 'Default test case',
           passed: formData.status === 'pass',
           notes: formData.feedback,
@@ -149,16 +148,9 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       };
 
       if (editTestExecution && editTestExecution._id) {
-        await updateTestExecution(editTestExecution._id, {
-          ...testExecutionData,
-          status: formData.status === 'pass' ? 'completed' : 'failed',
-        });
+        await updateTestExecution(editTestExecution._id, testExecutionData);
       } else {
-        // Always create new test execution (no duplicate checking)
-        await createTestExecution({
-          ...testExecutionData,
-          status: formData.status === 'pass' ? 'completed' : 'failed',
-        });
+        await createTestExecution(testExecutionData);
       }
 
       // Reset form after successful submission
@@ -185,18 +177,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       case 'fail':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pass':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'fail':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return <XCircle className="h-4 w-4 text-red-600" />;
     }
   };
 

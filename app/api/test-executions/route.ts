@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
     // Build match conditions
     const matchConditions: any = {};
 
-    // Filter by status
-    if (status && status.trim() !== '') {
+    // Filter by status (only pass or fail)
+    if (status && status.trim() !== '' && ['pass', 'fail'].includes(status.toLowerCase())) {
       matchConditions.status = status.toLowerCase();
     }
 
@@ -127,6 +127,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate status
+    if (status && !['pass', 'fail'].includes(status.toLowerCase())) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Status must be either "pass" or "fail"',
+        },
+        { status: 400 }
+      );
+    }
+
     // Verify task exists
     const task = await Task.findById(taskId);
     if (!task) {
@@ -139,11 +150,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new test execution (always create new, don't update existing)
+    // Create new test execution
     const testExecution = new TestExecution({
       taskId,
       testId: testId.trim(),
-      status: status || 'fail',
+      status: status ? status.toLowerCase() : 'fail',
       feedback: feedback.trim(),
       attachedImages: attachedImages || [],
       testerName: testerName.trim(),

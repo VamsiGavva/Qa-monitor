@@ -84,6 +84,17 @@ export async function PUT(
       );
     }
 
+    // Validate status
+    if (status && !['pass', 'fail'].includes(status.toLowerCase())) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Status must be either "pass" or "fail"',
+        },
+        { status: 400 }
+      );
+    }
+
     // Calculate passed test cases if testCases are provided
     let passedTestCases = 0;
     let totalTestCases = 0;
@@ -99,7 +110,7 @@ export async function PUT(
         taskId,
         testId: testId.trim(),
         testCases: testCases || [],
-        status,
+        status: status ? status.toLowerCase() : 'fail',
         feedback: feedback.trim(),
         attachedImages: attachedImages || [],
         testerName: testerName.trim(),
