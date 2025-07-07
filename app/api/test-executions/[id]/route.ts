@@ -95,15 +95,6 @@ export async function PUT(
       );
     }
 
-    // Calculate passed test cases if testCases are provided
-    let passedTestCases = 0;
-    let totalTestCases = 0;
-    
-    if (testCases && Array.isArray(testCases)) {
-      passedTestCases = testCases.filter((tc: any) => tc.passed).length;
-      totalTestCases = testCases.length;
-    }
-
     const updatedTestExecution = await TestExecution.findByIdAndUpdate(
       id,
       {
@@ -114,8 +105,6 @@ export async function PUT(
         feedback: feedback.trim(),
         attachedImages: attachedImages || [],
         testerName: testerName.trim(),
-        passedTestCases,
-        totalTestCases,
       },
       { new: true, runValidators: true }
     ).populate('taskId', 'unitTestLabel description tags');

@@ -7,8 +7,6 @@ export interface ITestExecution extends Document {
   feedback: string;
   attachedImages?: string[];
   testerName: string;
-  passedTestCases: number;
-  totalTestCases: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,14 +44,6 @@ const TestExecutionSchema: Schema = new Schema({
     type: String,
     required: [true, 'Tester name is required'],
     trim: true,
-  },
-  passedTestCases: {
-    type: Number,
-    default: 0,
-  },
-  totalTestCases: {
-    type: Number,
-    default: 0,
   },
 }, {
   timestamps: true,

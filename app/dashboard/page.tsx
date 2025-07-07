@@ -6,7 +6,6 @@ import { useTask } from '@/context/TaskContext';
 import { useTestExecution } from '@/context/TestExecutionContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import {
   BarChart,
   Bar,
@@ -21,8 +20,6 @@ import {
 } from 'recharts';
 import {
   CheckCircle,
-  Clock,
-  AlertCircle,
   XCircle,
   TrendingUp,
   Users,
@@ -39,7 +36,6 @@ export default function DashboardPage() {
     totalExecutions: 0,
     passedExecutions: 0,
     failedExecutions: 0,
-    averagePassRate: 0,
   });
 
   useEffect(() => {
@@ -62,16 +58,11 @@ export default function DashboardPage() {
       return acc;
     }, {} as Record<string, number>);
 
-    const totalPassedTests = testExecutions.reduce((sum, execution) => sum + execution.passedTestCases, 0);
-    const totalTests = testExecutions.reduce((sum, execution) => sum + execution.totalTestCases, 0);
-    const averagePassRate = totalTests > 0 ? (totalPassedTests / totalTests) * 100 : 0;
-
     setStats({
       totalTasks,
       totalExecutions,
       passedExecutions: statusCounts.pass || 0,
       failedExecutions: statusCounts.fail || 0,
-      averagePassRate,
     });
   };
 
@@ -91,7 +82,7 @@ export default function DashboardPage() {
       case 'fail':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-red-600" />;
     }
   };
 
@@ -102,7 +93,7 @@ export default function DashboardPage() {
       case 'fail':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-red-100 text-red-800';
     }
   };
 
@@ -239,9 +230,6 @@ export default function DashboardPage() {
                       <Badge className={`text-xs ${getStatusColor(execution.status)}`}>
                         {execution.status.toUpperCase()}
                       </Badge>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {execution.passedTestCases}/{execution.totalTestCases} passed
-                      </p>
                     </div>
                   </div>
                 ))

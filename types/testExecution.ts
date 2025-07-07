@@ -23,8 +23,6 @@ export interface TestExecution {
   feedback: string;
   attachedImages: string[];
   testerName: string;
-  passedTestCases: number;
-  totalTestCases: number;
   createdAt: string;
   updatedAt: string;
   __v: number;

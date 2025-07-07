@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useTestExecution } from '@/context/TestExecutionContext';
 import { useTask } from '@/context/TaskContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table,
@@ -27,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, History, Search, Filter, RefreshCw, FileText, Calendar, User, Target, Tag, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, History, Search, Filter, RefreshCw, FileText, Calendar, User, Target, Tag, CheckCircle, XCircle } from 'lucide-react';
 import { TestExecution } from '@/types/testExecution';
 import MultiSelectTags from './MultiSelectTags';
 
@@ -123,33 +122,24 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
       case 'pass':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'failed':
       case 'fail':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-red-600" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
       case 'pass':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'failed':
       case 'fail':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-red-100 text-red-800 border-red-200';
     }
-  };
-
-  const getPassRate = (passed: number, total: number) => {
-    if (total === 0) return '0%';
-    return `${Math.round((passed / total) * 100)}%`;
   };
 
   if (loading && testExecutions.length === 0) {
@@ -275,18 +265,6 @@ export default function TestExecutionTable({ onEditTestExecution, onShowHistory 
                     <div className="flex items-center space-x-2">
                       <XCircle className="h-4 w-4 text-red-600" />
                       <span>Fail</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="completed">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span>Completed</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="failed">
-                    <div className="flex items-center space-x-2">
-                      <XCircle className="h-4 w-4 text-red-600" />
-                      <span>Failed</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
