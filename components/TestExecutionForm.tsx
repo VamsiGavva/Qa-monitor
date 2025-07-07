@@ -52,7 +52,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     if (editTestExecution) {
       setFormData({
         taskId: editTestExecution.taskId?._id || '',
-        status: editTestExecution.status,
+        status: editTestExecution.status, // Now directly use the status since it's already 'pass' or 'fail'
         feedback: editTestExecution.feedback,
         attachedImages: editTestExecution.attachedImages || [],
       });
