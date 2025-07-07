@@ -5,7 +5,6 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: 'admin' | 'tester' | 'manager';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -32,11 +31,6 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters'],
-  },
-  role: {
-    type: String,
-    enum: ['admin', 'tester', 'manager'],
-    default: 'tester',
   },
   isActive: {
     type: Boolean,
@@ -66,7 +60,6 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 
 // Add indexes
 UserSchema.index({ email: 1 });
-UserSchema.index({ role: 1 });
 UserSchema.index({ isActive: 1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

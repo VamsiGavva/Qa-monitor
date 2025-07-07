@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +19,10 @@ import {
   LayoutDashboard,
   Plus,
   TestTube,
-  History,
   LogOut,
   User,
   ChevronDown,
+  Tag,
 } from 'lucide-react';
 
 const navigation = [
@@ -42,24 +41,16 @@ const navigation = [
     href: '/test-executions',
     icon: TestTube,
   },
+  {
+    name: 'TAGS',
+    href: '/tags',
+    icon: Tag,
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800';
-      case 'manager':
-        return 'bg-blue-100 text-blue-800';
-      case 'tester':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -114,11 +105,9 @@ export default function Sidebar() {
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {user?.name || 'User'}
                   </p>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={`text-xs ${getRoleColor(user?.role || 'tester')}`}>
-                      {user?.role || 'tester'}
-                    </Badge>
-                  </div>
+                  <p className="text-xs text-gray-500">
+                    {user?.email || 'user@example.com'}
+                  </p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-400" />
               </div>

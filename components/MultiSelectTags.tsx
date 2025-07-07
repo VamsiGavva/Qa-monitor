@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import axios from 'axios';
+import { useTag } from '@/context/TagContext';
 
 interface MultiSelectTagsProps {
   selectedTags: string[];
@@ -28,25 +28,13 @@ export default function MultiSelectTags({
 }: MultiSelectTagsProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { tags, loading, getTags, createTag } = useTag();
 
   useEffect(() => {
-    fetchTags();
+    getTags();
   }, []);
 
-  const fetchTags = async () => {
-    try {
-      const response = await axios.get('/api/tags');
-      if (response.data.success) {
-        setAvailableTags(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const filteredTags = availableTags.filter(tag =>
+  const filteredTags = tags.filter(tag =>
     tag.toLowerCase().includes(searchValue.toLowerCase())
   );
 
@@ -65,20 +53,16 @@ export default function MultiSelectTags({
     const trimmedValue = searchValue.trim();
     if (
       trimmedValue &&
-      !availableTags.includes(trimmedValue)
+      !tags.includes(trimmedValue)
     ) {
-      setLoading(true);
       try {
-        await axios.post('/api/tags', { tag: trimmedValue });
-        setAvailableTags(prev => [...prev, trimmedValue]);
+        await createTag(trimmedValue);
         onTagsChange([...selectedTags, trimmedValue]);
         setSearchValue('');
       } catch (error) {
         console.error('Error adding tag:', error);
-      } finally {
-        setLoading(false);
       }
-    } else if (trimmedValue && availableTags.includes(trimmedValue)) {
+    } else if (trimmedValue && tags.includes(trimmedValue)) {
       handleTagSelect(trimmedValue);
     }
   };
@@ -147,7 +131,7 @@ export default function MultiSelectTags({
               onKeyDown={handleKeyDown}
               className="h-9"
             />
-            {searchValue && !availableTags.some(tag => tag.toLowerCase() === searchValue.toLowerCase()) && (
+            {searchValue && !tags.some(tag => tag.toLowerCase() === searchValue.toLowerCase()) && (
               <Button
                 variant="ghost"
                 className="w-full justify-start mt-2 h-9"

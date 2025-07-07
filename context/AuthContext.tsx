@@ -7,7 +7,6 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'tester' | 'manager';
   isActive: boolean;
 }
 
@@ -60,7 +59,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role?: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -120,12 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: string = 'tester') => {
+  const register = async (name: string, email: string, password: string) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const response = await axios.post('/api/auth/register', { name, email, password, role });
+      const response = await axios.post('/api/auth/register', { name, email, password });
 
       if (response.data.success) {
         const { token, user } = response.data.data;

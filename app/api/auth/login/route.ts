@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       userId: user._id.toString(),
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: 'user', // Default role for compatibility
     });
 
     // Remove password from response
@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       _id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role,
       isActive: user.isActive,
     };
 

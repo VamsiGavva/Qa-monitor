@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Bug, Loader2, Rocket, Zap, Target } from 'lucide-react';
 import Link from 'next/link';
@@ -20,7 +19,6 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'tester',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -39,13 +37,6 @@ export default function RegisterPage() {
       [name]: value,
     }));
     setFormError('');
-  };
-
-  const handleRoleChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value,
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +58,7 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.role);
+      await register(formData.name, formData.email, formData.password);
       router.push('/dashboard');
     } catch (error) {
       // Error is handled by context
@@ -213,22 +204,6 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-
-                {/* <div className="space-y-2">
-                  <Label htmlFor="role" className="text-sm font-semibold text-gray-700">
-                    Role
-                  </Label>
-                  <Select value={formData.role} onValueChange={handleRoleChange}>
-                    <SelectTrigger className="h-11 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tester">QA Tester</SelectItem>
-                      <SelectItem value="manager">QA Manager</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-semibold text-gray-700">

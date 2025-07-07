@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTestExecution } from '@/context/TestExecutionContext';
 import { useTask } from '@/context/TaskContext';
+import { useTag } from '@/context/TagContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { TestExecution } from '@/types/testExecution';
 import { Task } from '@/types/task';
 import ImageUpload from './ImageUpload';
-import { Clock, CheckCircle, XCircle, Hash, User, FileText } from 'lucide-react';
+import MultiSelectTags from './MultiSelectTags';
+import { Clock, CheckCircle, XCircle, Hash, User, FileText, Tag, Plus, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 interface TestExecutionFormProps {
   editTestExecution?: TestExecution | null;
@@ -23,6 +26,7 @@ interface TestExecutionFormProps {
 export default function TestExecutionForm({ editTestExecution, onSuccess }: TestExecutionFormProps) {
   const { createTestExecution, updateTestExecution, loading, uploadImages } = useTestExecution();
   const { tasks, getTasks } = useTask();
+  const { getTagsByTaskId } = useTag();
   const { user } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -33,6 +37,8 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
   });
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskTags, setTaskTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -52,7 +58,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     if (editTestExecution) {
       setFormData({
         taskId: editTestExecution.taskId?._id || '',
-        status: editTestExecution.status, // Now directly use the status since it's already 'pass' or 'fail'
+        status: editTestExecution.status,
         feedback: editTestExecution.feedback,
         attachedImages: editTestExecution.attachedImages || [],
       });
@@ -61,6 +67,8 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       const task = tasks.find((t:any) => t._id === editTestExecution.taskId);
       if (task) {
         setSelectedTask(task);
+        setTaskTags(task.tags || []);
+        setSelectedTags(task.tags || []);
       }
     }
   }, [editTestExecution, tasks]);
@@ -83,7 +91,7 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
     }
   };
 
-  const handleTaskSelect = (taskId: string) => {
+  const handleTaskSelect = async (taskId: string) => {
     const task = tasks.find(t => t._id === taskId);
     if (task) {
       setSelectedTask(task);
@@ -91,6 +99,17 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
         ...prev,
         taskId,
       }));
+
+      // Fetch tags for this task
+      try {
+        const tags = await getTagsByTaskId(taskId);
+        setTaskTags(tags);
+        setSelectedTags(tags); // Pre-select existing tags
+      } catch (error) {
+        console.error('Error fetching task tags:', error);
+        setTaskTags(task.tags || []);
+        setSelectedTags(task.tags || []);
+      }
     }
   };
 
@@ -106,6 +125,10 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
       ...prev,
       attachedImages: images,
     }));
+  };
+
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags);
   };
 
   const validateForm = () => {
@@ -162,6 +185,8 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
           attachedImages: [],
         });
         setSelectedTask(null);
+        setTaskTags([]);
+        setSelectedTags([]);
       }
 
       onSuccess?.();
@@ -259,20 +284,51 @@ export default function TestExecutionForm({ editTestExecution, onSuccess }: Test
           </div>
 
           {selectedTask && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
+            <div className="space-y-6 p-6 bg-gray-50 rounded-lg border">
+              <div className="space-y-4">
                 <Label className="text-sm font-semibold text-gray-700">Selected Task Details</Label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Description:</span> {selectedTask.description}
                   </p>
-                  <div className="flex flex-wrap gap-1">
-                    <span className="text-sm font-medium text-gray-600 mr-2">Tags:</span>
-                    {selectedTask.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                  
+                  {/* Task Tags Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
+                        <Tag className="h-4 w-4" />
+                        <span>Task Tags</span>
+                      </Label>
+                      <Link href="/tags" target="_blank">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add New Tag
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
+                    
+                    <MultiSelectTags
+                      selectedTags={selectedTags}
+                      onTagsChange={handleTagsChange}
+                      placeholder="Select or add tags for this execution..."
+                    />
+                    
+                    <div className="text-xs text-gray-500">
+                      <span className="font-medium">Original task tags:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {taskTags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

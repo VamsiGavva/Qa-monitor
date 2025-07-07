@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
     
     const body = await request.json();
-    const { name, email, password, role = 'tester' } = body;
+    const { name, email, password } = body;
 
     // Validation
     if (!name || !email || !password) {
@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
-      role,
     });
 
     const savedUser = await user.save();
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
       userId: savedUser._id.toString(),
       email: savedUser.email,
       name: savedUser.name,
-      role: savedUser.role,
+      role: 'user', // Default role for compatibility
     });
 
     // Remove password from response
@@ -66,7 +65,6 @@ export async function POST(request: NextRequest) {
       _id: savedUser._id,
       name: savedUser.name,
       email: savedUser.email,
-      role: savedUser.role,
       isActive: savedUser.isActive,
     };
 
