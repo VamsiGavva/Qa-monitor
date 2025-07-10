@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Bug, Loader2, Shield, CheckCircle, Lock } from 'lucide-react';
+import { Eye, EyeOff, Bug, Loader2, Shield, CheckCircle, Lock, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const isFirstLogin = searchParams.get('first') === 'true';
   
   const [formData, setFormData] = useState({
     password: '',
@@ -95,9 +96,14 @@ export default function ResetPasswordPage() {
             <div className="bg-green-100 rounded-full p-4 w-fit mx-auto mb-6">
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Password Reset Successful!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              {isFirstLogin ? 'Welcome! Password Set Successfully' : 'Password Reset Successful!'}
+            </h2>
             <p className="text-gray-600 mb-6">
-              Your password has been successfully reset. You will be redirected to the login page in a few seconds.
+              {isFirstLogin 
+                ? 'Your password has been set successfully. You can now log in with your new password.'
+                : 'Your password has been successfully reset. You will be redirected to the login page in a few seconds.'
+              }
             </p>
             <Button
               onClick={() => router.push('/login')}
@@ -125,10 +131,13 @@ export default function ResetPasswordPage() {
               <span className="text-3xl font-bold">QAMonitorTool</span>
             </div>
             <h1 className="text-4xl font-bold mb-4 leading-tight">
-              Reset Your Password
+              {isFirstLogin ? 'Welcome to QAMonitorTool' : 'Reset Your Password'}
             </h1>
             <p className="text-xl text-purple-100 leading-relaxed">
-              Create a new secure password for your account to continue using our QA monitoring platform.
+              {isFirstLogin 
+                ? 'Set up your secure password to get started with our QA monitoring platform.'
+                : 'Create a new secure password for your account to continue using our QA monitoring platform.'
+              }
             </p>
           </div>
 
@@ -169,10 +178,26 @@ export default function ResetPasswordPage() {
                 <Bug className="h-8 w-8 text-purple-600" />
                 <span className="text-2xl font-bold text-gray-900">QAMonitorTool</span>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Reset Password</CardTitle>
-              <p className="text-gray-600 mt-2">Enter your new password below</p>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                {isFirstLogin ? 'Set Your Password' : 'Reset Password'}
+              </CardTitle>
+              <p className="text-gray-600 mt-2">
+                {isFirstLogin 
+                  ? 'Create a secure password for your account'
+                  : 'Enter your new password below'
+                }
+              </p>
             </CardHeader>
             <CardContent className="px-8 pb-8">
+              {isFirstLogin && (
+                <Alert className="mb-6 border-blue-200 bg-blue-50">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    This is your first time logging in. Please set a secure password to continue.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
                   <Alert variant="destructive" className="border-red-200 bg-red-50">
@@ -184,7 +209,7 @@ export default function ResetPasswordPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
-                    New Password
+                    {isFirstLogin ? 'Create Password' : 'New Password'}
                   </Label>
                   <div className="relative">
                     <Input
@@ -193,7 +218,7 @@ export default function ResetPasswordPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={handleInputChange}
-                      placeholder="Enter your new password"
+                      placeholder={isFirstLogin ? 'Create your password' : 'Enter your new password'}
                       className="h-12 pr-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                       required
                     />
@@ -209,7 +234,7 @@ export default function ResetPasswordPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700">
-                    Confirm New Password
+                    Confirm Password
                   </Label>
                   <div className="relative">
                     <Input
@@ -218,7 +243,7 @@ export default function ResetPasswordPage() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      placeholder="Confirm your new password"
+                      placeholder="Confirm your password"
                       className="h-12 pr-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                       required
                     />
@@ -249,10 +274,10 @@ export default function ResetPasswordPage() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Resetting Password...
+                      {isFirstLogin ? 'Setting Password...' : 'Resetting Password...'}
                     </>
                   ) : (
-                    'Reset Password'
+                    isFirstLogin ? 'Set Password' : 'Reset Password'
                   )}
                 </Button>
               </form>

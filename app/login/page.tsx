@@ -13,7 +13,7 @@ import Link from 'next/link';
 import axios from 'axios';
 
 export default function LoginPage() {
-  const { login, loading, error, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +21,7 @@ export default function LoginPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
@@ -50,6 +51,9 @@ export default function LoginPage() {
     }
 
     try {
+      setLoading(true);
+      setFormError('');
+
       const response = await axios.post('/api/auth/login', {
         email: formData.email,
         password: formData.password,
@@ -58,18 +62,21 @@ export default function LoginPage() {
       if (response.data.success) {
         if (response.data.requiresPasswordReset) {
           // First time login - redirect to reset password
-          router.push(`/reset-password?token=${response.data.resetToken}`);
+          router.push(`/reset-password?token=${response.data.resetToken}&first=true`);
         } else {
-          // Normal login - use the auth context
-          await login(formData.email, formData.password);
+          // Normal login - store token and redirect
+          localStorage.setItem('auth-token', response.data.data.token);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
           router.push('/dashboard');
         }
       } else {
         setFormError(response.data.error || 'Login failed');
       }
-    } catch (error) {
-      const errorMessage = (error as any).response?.data?.error || 'Login failed';
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Login failed';
       setFormError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,16 +115,6 @@ export default function LoginPage() {
       setForgotPasswordLoading(false);
     }
   };
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="flex items-center space-x-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="text-lg text-gray-700 font-medium">Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   if (showForgotPassword) {
     return (
@@ -199,6 +196,7 @@ export default function LoginPage() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding & Features */}
@@ -284,10 +282,10 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent className="px-8 pb-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {(error || formError) && (
+                {formError && (
                   <Alert variant="destructive" className="border-red-200 bg-red-50">
                     <AlertDescription className="text-red-800">
-                      {error || formError}
+                      {formError}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -342,6 +340,7 @@ export default function LoginPage() {
                     Forgot your password?
                   </button>
                 </div>
+
                 <Button
                   type="submit"
                   disabled={loading}
