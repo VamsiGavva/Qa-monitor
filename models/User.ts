@@ -1,14 +1,21 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   isActive: boolean;
+  isFirstLogin: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  generatePasswordResetToken(): string;
+  clearPasswordResetToken(): void;
 }
 
 const UserSchema: Schema = new Schema({
@@ -36,6 +43,19 @@ const UserSchema: Schema = new Schema({
     type: Boolean,
     default: true,
   },
+  isFirstLogin: {
+    type: Boolean,
+    default: true,
+  },
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpires: {
+    type: Date,
+  },
+  lastLoginAt: {
+    type: Date,
+  },
 }, {
   timestamps: true,
 });
@@ -58,8 +78,22 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+// Generate password reset token
+UserSchema.methods.generatePasswordResetToken = function(): string {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  return resetToken;
+};
+
+// Clear password reset token
+UserSchema.methods.clearPasswordResetToken = function(): void {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpires = undefined;
+};
 // Add indexes
 UserSchema.index({ email: 1 });
 UserSchema.index({ isActive: 1 });
+UserSchema.index({ resetPasswordToken: 1 });
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

@@ -56,6 +56,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if it's first login
+    if (user.isFirstLogin) {
+      // Generate reset token for first-time password change
+      const resetToken = user.generatePasswordResetToken();
+      await user.save();
+      
+      return NextResponse.json({
+        success: true,
+        requiresPasswordReset: true,
+        resetToken,
+        message: 'First time login detected. Please set a new password.',
+      });
+    }
+
+    // Update last login time
+    user.lastLoginAt = new Date();
+    await user.save();
+
     // Generate JWT token
     const token = generateToken({
       userId: user._id.toString(),
@@ -70,6 +88,7 @@ export async function POST(request: NextRequest) {
       name: user.name,
       email: user.email,
       isActive: user.isActive,
+      isFirstLogin: user.isFirstLogin,
     };
 
     return NextResponse.json({
